@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+{% load staticfiles %}
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>IITG Course Feedback Portal - Admin Page</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="{% static "css/bootstrap.min.css" %}" rel="stylesheet">
+
+    <!-- MetisMenu CSS -->
+    <link href="{% static "css/plugins/metisMenu/metisMenu.min.css" %}" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="{% static "css/sb-admin-2.css" %}" rel="stylesheet">
+
+    <!-- Custom Fonts -->
+    <link href="{% static "font-awesome-4.1.0/css/font-awesome.min.css" %}" rel="stylesheet" type="text/css">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+</head>
+
+<body>
+
+    <div id="wrapper">
+
+        <!-- Navigation -->
+        <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="/feedback/user_home">Administrator</a>
+            </div>
+            <!-- /.navbar-header -->
+
+            <ul class="nav navbar-top-links navbar-right">
+                <!-- /.dropdown -->
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                        <i class="fa fa-user fa-fw"></i>  <i class="fa fa-caret-down"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-user">
+                        <li><a href="/feedback/user_home"><i class="fa fa-user fa-fw"></i> User Profile</a>
+                        </li>
+                        <li class="divider"></li>
+                        <li><a href="/feedback/logout"><i class="fa fa-sign-out fa-fw"></i> Logout</a>
+                        </li>
+                    </ul>
+                    <!-- /.dropdown-user -->
+                </li>
+                <!-- /.dropdown -->
+            </ul>
+            <!-- /.navbar-top-links -->
+
+            <div class="navbar-default sidebar" role="navigation">
+                <div class="sidebar-nav navbar-collapse">
+                    <ul class="nav" id="side-menu">
+                        <li>
+                            <a href="#"><i class="fa fa-bar-chart-o fa-fw"></i> Analytics<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                {% for dept in departments %}
+                                    <li>
+                                        <a href="#">{{dept}}<span class="fa arrow"></span></a>
+                                        <ul class="nav nav-third-level">
+                                            {% for c in courses %}
+                                                {% if c.dept == dept %}
+                                                    <li>
+                                                        <a href="/feedback/analytics_page?course={{c.courseName}}">{{c.courseName}}</a>
+                                                    </li>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </ul>
+                                        <!-- /.nav-third-level -->
+                                    </li>
+                                {% endfor %}
+
+                            </ul>
+                        </li>
+                        <li>
+                            <a href="#"><i class="fa fa-tasks fa-fw"></i> Comments<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                {% for dept in departments %}
+                                    <li>
+                                        <a href="#">{{dept}}<span class="fa arrow"></span></a>
+                                        <ul class="nav nav-third-level">
+                                            {% for c in courses %}
+                                                {% if c.dept == dept %}
+                                                    <li>
+                                                        <a href="/feedback/prof_commentspage?course={{c.courseName}}">{{c.courseName}}</a>
+                                                    </li>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </ul>
+                                        <!-- /.nav-third-level -->
+                                    </li>
+                                {% endfor %}
+
+                            </ul>
+                        </li>
+                        
+                        <li>
+                            <a href="#"><i class="fa fa-comments fa-fw"></i> Private Messages<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                {% for dept in departments %}
+                                    <li>
+                                        <a href="#">{{dept}}<span class="fa arrow"></span></a>
+                                        <ul class="nav nav-third-level">
+                                            {% for c in courses %}
+                                                {% if c.dept == dept %}
+                                                    <li>
+                                                        <a href="/feedback/professors_private_messages?course={{c.courseName}}">{{c.courseName}}</a>
+                                                    </li>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </ul>
+                                        <!-- /.nav-third-level -->
+                                    </li>
+                                {% endfor %}
+
+                            </ul>
+                        </li>
+
+                        <li>
+                            <a href="#"><i class="fa fa-wrench fa-fw"></i> Create Forms<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                {% for dept in departments %}
+                                    <li>
+                                        <a href="#">{{dept}}<span class="fa arrow"></span></a>
+                                        <ul class="nav nav-third-level">
+                                            {% for c in courses %}
+                                                {% if c.dept == dept %}
+                                                    <li>
+                                                        <a href="/feedback/form_creator?course={{c.courseName}}">{{c.courseName}}</a>
+                                                    </li>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </ul>
+                                        <!-- /.nav-third-level -->
+                                    </li>
+                                {% endfor %}
+
+                            </ul>
+                        </li>
+
+                        <li>
+                            <a href="/feedback/user_manual" >
+                                <i class="fa fa-edit fa-fw"></i>
+                                User Manual
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <!-- /.sidebar-collapse -->
+            </div>
+            <!-- /.navbar-static-side -->
+        </nav>
+
+        <!-- Page Content -->
+        <div id="page-wrapper">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <h1 class="page-header">Administrator Dashboard</h1>
+                    </div>
+                    <!-- /.col-lg-12 -->
+                </div>
+                <!-- /.row -->
+                <!--The list of courses-->
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="panel panel-info">
+                            <div class="panel-heading">
+                                Introduction
+                            </div>
+                            <div class="panel-body">
+                                <h4>Dear Administrator</h4>
+                                <p>This is a course feedback management system that is designed to be secure but yet flexible with a strong focus on the main reason why course feedback is taken, analytics.</p>
+                                <p>Here, we use a novel encryption system that enables previous feedbacks to be edited while still maintaining student anonymity. Further students can use the anonymity provided by this system to talk privately with the professor on matters which they are reluctant to discuss in person. We believe this will help address many student concerns as a professor's counselling and guidance can go a long way in improving a student's life in college. These messages may be shared with the administrator on the discretion of the professor.</p>
+                                <p>All efforts have been taken to make this system as secure, reliable and user-friendly as possible. However if you face any issues or find anything lacking we would be glad to be informed of it.</p>
+                                <p class="text-right">Thanking you<br/>The BAG team</p>
+                            </div>
+                        </div>
+                    </div>
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="panel panel-info">
+                            <div class="panel-heading">
+                                How to Use
+                            </div>
+                            <div class="panel-body">
+                                <p>To the right, you see the main sidebar from which you can navigate to all the courses listed by department. For each course, you can view detailed reports of the rating type questions and also view, very conviniently, all the comments made by students listed by question. The private messages can only be viewed by the administrator if the professor decides to share this information (not yet implemented, but in the pipeline)</p>
+                                <p>This system places a lot of emphasis on security, ensuring that information can only be modified/accessed by the inteded people. Hence we have a very strong permissions policy which is described in the next panel.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="panel panel-info">
+                            <div class="panel-heading">
+                                Permissions Policy
+                            </div>
+                            <div class="panel-body">
+                                <p><b>Administrators:</b> As the administrator, you have access to almost all the information about all the courses. However, private messages are, as the name suggests, private between the instructor and the student and feedback can only be given by students registered for the particular course.</p>
+                                <p><b>Professors: </b> Professors can access all relevant information about the courses they teach including the private messages.</p>
+                                <p><b>Students: </b>Students can give and modify their feedback anonymously. They can also view and initiate private conversations with the instructor in case they require such support.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                 <div class="row">
+                    <div class="col-lg-12">
+                        <div class="panel panel-info">
+                            <div class="panel-heading">
+                                Disclaimer
+                            </div>
+                            <div class="panel-body">
+                                <p><small>THERE IS NO WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES PROVIDE THE PROGRAM “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU. SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR OR CORRECTION.</small></p>
+                                <p><small>IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MODIFIES AND/OR CONVEYS THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.</small></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- /.container-fluid -->
+        </div>
+        <!-- /#page-wrapper -->
+
+    </div>
+    <!-- /#wrapper -->
+
+    <!-- jQuery -->
+    <script src="{% static "js/jquery.js"%}"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="{% static "js/bootstrap.min.js"%}"></script>
+
+    <!-- Metis Menu Plugin JavaScript -->
+    <script src="{% static "js/plugins/metisMenu/metisMenu.min.js"%}"></script>
+
+    <!-- Custom Theme JavaScript -->
+    <script src="{% static "js/sb-admin-2.js" %}"></script>
+
+</body>
+
+</html>

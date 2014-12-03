@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+{% load staticfiles %}
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>IITG Course Feedback Portal - Student Page</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="{% static "css/bootstrap.min.css" %}" rel="stylesheet">
+
+    <!-- MetisMenu CSS -->
+    <link href="{% static "css/plugins/metisMenu/metisMenu.min.css" %}" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="{% static "css/sb-admin-2.css" %}" rel="stylesheet">
+
+    <!-- Custom Fonts -->
+    <link href="{% static "font-awesome-4.1.0/css/font-awesome.min.css" %}" rel="stylesheet" type="text/css">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+</head>
+
+<body>
+
+    <div id="wrapper">
+
+        <!-- Navigation -->
+        <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="user_home">IITG Course Feedback Portal</a>
+            </div>
+            <!-- /.navbar-header -->
+
+            <ul class="nav navbar-top-links navbar-right">
+              <!-- /.dropdown -->
+              <li class="dropdown">
+                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                  <i class="fa fa-user fa-fw"></i>  <i class="fa fa-caret-down"></i>
+                </a>
+                <ul class="dropdown-menu dropdown-user">
+                  <li><a href="/feedback/user_home"><i class="fa fa-user fa-fw"></i> User Profile</a>
+                  </li>
+                  <li class="divider"></li>
+                  <li><a href="/feedback/logout"><i class="fa fa-sign-out fa-fw"></i> Logout</a>
+                  </li>
+                </ul>
+                <!-- /.dropdown-user -->
+              </li>
+              <!-- /.dropdown -->
+            </ul>
+            <!-- /.navbar-top-links -->
+
+            <div class="navbar-default sidebar" role="navigation">
+                <div class="sidebar-nav navbar-collapse">
+                    <ul class="nav" id="side-menu">
+                        <li class="">
+                            <a href="#">
+                                <i class="fa fa-sitemap fa-fw"></i>
+                                My Courses<span class="fa arrow"></span></a>
+                            <ul style="height: 0px;" aria-expanded="false" class="nav nav-second-level collapse">
+                                {% for c in courses %}
+                                    <li>
+                                        <a href="/feedback/student_feedback_form?course={{c.courseName}}">{{c.courseName}}
+                                            <ul>
+                                                {% for p in c.profs %}
+
+                                                    <li>{{p}}</li>
+                                                {% endfor %}
+                                            </ul>
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                        
+                        <li>
+                            <a href="/feedback/feedback_guidelines">
+                                <i class="fa fa-edit fa-fw"></i>
+                                Feedback Guidelines
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <!-- /.sidebar-collapse -->
+            </div>
+            <!-- /.navbar-static-side -->
+        </nav>
+
+        <!-- Page Content -->
+        <div id="page-wrapper">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <h1 class="page-header">{{course}} - Feedback Form</h1>
+                    </div>
+                    <!-- /.col-lg-12 -->
+                </div>
+                <form action="student_feedback_form" method="post">
+                    {%csrf_token%}
+                    <input type="hidden" name="course" value="{{course}}" />
+                    <div><div><div><div><table><tbody><!--So that it can be terminated at each section-->
+                    {% for x in formFormat %}
+                        {% if x.type == "ratingSectionHeader" %}
+                        <!-- *****************HTML START******************* -->
+                            </tbody></table></div></div></div></div>
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div class="panel panel-default">
+                                    <div class="panel-heading">
+                                        {{x.description}}
+                                    </div>
+                                    <div class="panel-body">
+                                        <table class="table table-bordered table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th></th>
+                                                        <th>
+                                                            Cannot Comment
+                                                            <small>(0)</small>
+                                                        </th>
+                                                        <th>
+                                                            Strongly Disagree
+                                                            <small>(1)</small>
+                                                        </th>
+                                                        <th>
+                                                            Disagree
+                                                            <small>(2)</small>
+                                                        </th>
+                                                        <th>
+                                                            Neutral
+                                                            <small>(3)</small>
+                                                        </th>
+                                                        <th>
+                                                            Agree
+                                                            <small>(4)</small>
+                                                        </th>
+                                                        <th>
+                                                            Strongly Agree
+                                                            <small>(5)</small>
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                        {% elif x.type == "ratingOption" %}
+                        <!-- *****************HTML START******************* -->
+                                        <tr>
+                                            <th>{{x.description}}</th>
+                                            <td>
+                                                <div class="form-group">
+                                                    <div class="radio">
+                                                    <label>
+                                                        <input name="{{x.name}}" value="Cannot Comment" {% if x.prevValue == "Cannot Comment" %}checked {%endif %} type="radio"/>
+                                                    </label>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="form-group">
+                                                    <div class="radio">
+                                                    <label>
+                                                        <input name="{{x.name}}" value="Strongly Disagree" {% if x.prevValue == "Strongly Disagree" %}checked {%endif %} type="radio"/>
+                                                    </label>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="form-group">
+                                                    <div class="radio">
+                                                    <label>
+                                                        <input name="{{x.name}}" value="Disagree" {% if x.prevValue == "Disagree" %}checked {%endif %} type="radio"/>
+                                                    </label>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="form-group">
+                                                    <div class="radio">
+                                                    <label>
+                                                        <input name="{{x.name}}" value="Neutral" {% if x.prevValue == "Neutral" %}checked {%endif %} type="radio"/>
+                                                    </label>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="form-group">
+                                                    <div class="radio">
+                                                    <label>
+                                                        <input name="{{x.name}}" value="Agree" {% if x.prevValue == "Agree" %}checked {%endif %} type="radio"/>
+                                                    </label>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="form-group">
+                                                    <div class="radio">
+                                                    <label>
+                                                        <input name="{{x.name}}" value="Strongly Agree" {% if x.prevValue == "Strongly Agree" %}checked {%endif%} type="radio"/>
+                                                    </label>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                            {% elif x.type == "text" %}
+                                </tbody></table></div></div></div></div>
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                {{ x.description }}
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="form-group">
+                                                                <textarea class="form-control" rows="3" name="{{x.name}}">{{x.prevValue}}</textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div><div><div><div><table><tbody>
+                        {% endif %}
+                    {% endfor %}
+                </div></div></div></div>
+
+                <div class="row">
+                    <div class="col-lg-6">
+                        <h3>Dear Student</h3>
+                        <p>Hope you are enjoying the course and are having an excellent learning experience. All efforts are being made to make the course interesting and useful.</p>
+                        <p>Thank you for taking time out to fill this form. Your feedback here is very valuable as it will help improve the teaching standards in the institute and aid future batches.</p>
+                        <p>While filling the form, please keep in interests of the whole batch and try not to let your performance (which we hope was great) in the course affect your feedback. </p>
+                        <p>Further, you can rest assured that no pain has been spared to ensure that this feedback is anonymous. Only with your password (which is not stored in the server) can anyone know which feedback was yours. Otherwise the information is totally lost. Of course, you must not mention any details that can identify you such as your name, roll number etc.</p>
+                        <button type="submit" class="btn btn-info btn-block">Submit</button>
+                    </div>
+
+                    <!--************Chat Box*******************-->
+                    <div class="col-lg-6">
+                        <div class="chat-panel panel panel-default pull-right">
+                            <div class="panel-heading">
+                                <i class="fa fa-comments fa-fw"></i>
+                                Private Messaging
+                                <div class="btn-group pull-right">
+                                    <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+                                        <i class="fa fa-chevron-down"></i>
+                                    </button>
+                                    <ul class="dropdown-menu slidedown">
+                                        <li>
+                                            <a href="#">
+                                                <i class="fa fa-refresh fa-fw"></i> Refresh
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="#">
+                                                <i class="fa fa-check-circle fa-fw"></i> Available
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="#">
+                                                <i class="fa fa-times fa-fw"></i> Busy
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="#">
+                                                <i class="fa fa-clock-o fa-fw"></i> Away
+                                            </a>
+                                        </li>
+                                        <li class="divider"></li>
+                                        <li>
+                                            <a href="#">
+                                                <i class="fa fa-sign-out fa-fw"></i> Sign Out
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <!-- /.panel-heading -->
+                            <div class="panel-body">
+                                <ul class="chat">
+                                    {% for x in messages %}
+                                        {% if x.from == "student"%}
+                                            <li class="left clearfix">
+                                                <span class="chat-img pull-left">
+                                                    <img src="http://placehold.it/50/55C1E7/fff" alt="User Avatar" class="img-circle">
+                                                </span>
+                                                <div class="chat-body clearfix">
+                                                    <div class="header">
+                                                        <strong class="primary-font">You</strong> 
+                                                    </div>
+                                                    <p>
+                                                        {{x.msg}}
+                                                    </p>
+                                                </div>
+                                            </li>
+                                        {% else %}
+                                            <li class="right clearfix">
+                                                <span class="chat-img pull-right">
+                                                    <img src="http://placehold.it/50/FA6F57/fff" alt="User Avatar" class="img-circle">
+                                                </span>
+                                                <div class="chat-body clearfix">
+                                                    <div class="header">
+                                                        <strong class="pull-right primary-font">Professor</strong>
+                                                    </div>
+                                                    <p>
+                                                        {{x.msg}}
+                                                    </p>
+                                                </div>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            <!-- /.panel-body -->
+                            <div class="panel-footer">
+                                <div class="input-group">
+                                    <input id="btn-input" class="form-control input-sm" placeholder="Type your message here..." type="text" name="privateMessage">
+                                    <span class="input-group-btn">
+                                        <button class="btn btn-warning btn-sm" id="btn-chat">
+                                            Send
+                                        </button>
+                                    </span>
+                                </div>
+                            </div>
+                            <!-- /.panel-footer -->
+                        </div>
+                    </div>
+                </div>
+            </form>
+            <br/>
+    </div>
+    <!-- /#wrapper -->
+
+    <!-- jQuery -->
+    <script src="{% static "js/jquery.js"%}"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="{% static "js/bootstrap.min.js"%}"></script>
+
+    <!-- Metis Menu Plugin JavaScript -->
+    <script src="{% static "js/plugins/metisMenu/metisMenu.min.js"%}"></script>
+
+    <!-- Custom Theme JavaScript -->
+    <script src="{% static "js/sb-admin-2.js" %}"></script>
+
+</body>
+
+</html>

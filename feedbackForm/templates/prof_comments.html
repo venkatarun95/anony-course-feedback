@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+{% load staticfiles %}
+<html lang="en">
+
+<head>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    
+
+    
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Comments</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- MetisMenu CSS -->
+    <link href="/static/css/plugins/metisMenu/metisMenu.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="/static/css/sb-admin-2.css" rel="stylesheet">
+
+    <!-- Custom Fonts -->
+    <link href="/static/font-awesome-4.1.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <style>
+    #graph1{
+        border:solid 2px;
+        border-color: black;
+        margin-top: 0 px;
+        width: 450px;
+        float: left;
+
+        margin-left: 0px;
+        display: block;
+        height: 350px;
+    }
+     #maingraph{
+        border:solid 2px;
+        border-color: black;
+        margin-top: 0 px;
+        width: 980px;
+        float: left;
+
+        margin-left: 0px;
+        display: block;
+        height: 350px;
+    }
+    .btn.btn-warning{
+        position: center;
+        margin-left: 440px;
+    }
+    .text.ans{
+        width:1000px;
+    }
+    
+    </style>
+
+</head>
+
+<body>
+
+    <div id="wrapper">
+
+        <!-- Navigation -->
+        <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="/feedback/user_home">My Homepage</a>
+            </div>
+            <!-- /.navbar-header -->
+
+            <ul class="nav navbar-top-links navbar-right">
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                        <i class="fa fa-download fa-fw"></i>  <i class="fa fa-caret-down"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-messages">
+                        <li>
+                            <a href="/feedback/csv_download?course={{courseName}}">
+                                <i class="fa fa-download fa-fw"></i>
+                                Download CSV
+                            </a>
+                        </li>
+                    </ul>
+                    <!-- /.dropdown-messages -->
+                </li>
+                <!-- /.dropdown -->
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                        <i class="fa fa-user fa-fw"></i>  <i class="fa fa-caret-down"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-user">
+                        <li><a href="/feedback/user_home"><i class="fa fa-user fa-fw"></i> User Profile</a>
+                        </li>
+                        <li class="divider"></li>
+                        <li><a href="/feedback/logout"><i class="fa fa-sign-out fa-fw"></i> Logout</a>
+                        </li>
+                    </ul>
+                    <!-- /.dropdown-user -->
+                </li>
+                <!-- /.dropdown -->
+            </ul>
+            <!-- /.navbar-top-links -->
+
+            <div class="navbar-default sidebar" role="navigation">
+                <div class="sidebar-nav navbar-collapse">
+                    <ul class="nav" id="side-menu">
+                        <li>
+                            <a href="#"><i class="fa fa-bar-chart-o fa-fw"></i> Analytics<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                {% for dept in departments %}
+                                    <li>
+                                        <a href="#">{{dept}}<span class="fa arrow"></span></a>
+                                        <ul class="nav nav-third-level">
+                                            {% for c in courses %}
+                                                {% if c.dept == dept %}
+                                                    <li>
+                                                        <a href="/feedback/analytics_page?course={{c.courseName}}">{{c.courseName}}</a>
+                                                    </li>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </ul>
+                                        <!-- /.nav-third-level -->
+                                    </li>
+                                {% endfor %}
+
+                            </ul>
+                        </li>
+                        <li>
+                            <a href="#"><i class="fa fa-tasks fa-fw"></i> Comments<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                {% for dept in departments %}
+                                    <li>
+                                        <a href="#">{{dept}}<span class="fa arrow"></span></a>
+                                        <ul class="nav nav-third-level">
+                                            {% for c in courses %}
+                                                {% if c.dept == dept %}
+                                                    <li>
+                                                        <a href="/feedback/prof_commentspage?course={{c.courseName}}">{{c.courseName}}</a>
+                                                    </li>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </ul>
+                                        <!-- /.nav-third-level -->
+                                    </li>
+                                {% endfor %}
+
+                            </ul>
+                        </li>
+                        
+                        <li>
+                            <a href="#"><i class="fa fa-comments fa-fw"></i> Private Messages<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                {% for dept in departments %}
+                                    <li>
+                                        <a href="#">{{dept}}<span class="fa arrow"></span></a>
+                                        <ul class="nav nav-third-level">
+                                            {% for c in courses %}
+                                                {% if c.dept == dept %}
+                                                    <li>
+                                                        <a href="/feedback/professors_private_messages?course={{c.courseName}}">{{c.courseName}}</a>
+                                                    </li>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </ul>
+                                        <!-- /.nav-third-level -->
+                                    </li>
+                                {% endfor %}
+
+                            </ul>
+                        </li>
+                        <li>
+                            <a href="#"><i class="fa fa-wrench fa-fw"></i> Create Form<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                {% for dept in departments %}
+                                    <li>
+                                        <a href="#">{{dept}}<span class="fa arrow"></span></a>
+                                        <ul class="nav nav-third-level">
+                                            {% for c in courses %}
+                                                {% if c.dept == dept %}
+                                                    <li>
+                                                        <a href="/feedback/form_creator?course={{c.courseName}}">{{c.courseName}}</a>
+                                                    </li>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </ul>
+                                        <!-- /.nav-third-level -->
+                                    </li>
+                                {% endfor %}
+
+                            </ul>
+                        </li>
+                        <li>
+                            <a href="/feedback/user_manual" >
+                                <i class="fa fa-edit fa-fw"></i>
+                                User Manual
+                            </a>
+                        </li>
+                    
+                    </ul>
+                </div>
+                <!-- /.sidebar-collapse -->
+            </div>
+            <!-- /.navbar-static-side -->
+        </nav>
+
+        <!-- Page Content -->
+        <div id="page-wrapper">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <h2 class="page-header">{{comments.0.course}}    </h2>
+
+                    </div>
+                    <!-- /.col-lg-12 -->
+                </div>
+                <!-- /.row -->
+                <!--The list of courses-->
+                <div class="row">
+                    {% for i, j in comments_ques.items %}
+                    <div class="col-lg-12">
+                        <div class="panel panel-info">
+                            <div class="panel-heading">
+                                {{j}}
+                            </div>
+                            <div class="panel-body">
+                                {% for k in comments %}
+                                    {% for x,y in k.items %}
+                                        {% if x == i %}
+                                        <textarea id="textans" class="form-control" disabled >{{y}} </textarea>
+                                        <p></p>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                   {% endfor %}
+                </div>
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="panel panel-info">
+                            <div class="panel-heading">
+                                Word Cloud
+                            </div>
+                            <div class="panel-body" style="height:400px">
+                                <div id="wordcloud" style="width: 100%; height: 100%; position: relative;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- /.container-fluid -->
+        </div>
+        <!-- /#page-wrapper -->
+
+    </div>
+    <!-- /#wrapper -->
+
+    <!-- jQuery -->
+    <script src="/static/js/jquery.js"></script>
+
+    <!--For making the word clous-->
+    <script src="/static/js/jqcloud-1.0.4.min.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="/static/js/bootstrap.min.js"></script>
+
+    <!-- Metis Menu Plugin JavaScript -->
+    <script src="/static/js/plugins/metisMenu/metisMenu.min.js"></script>
+    <script src="/static/js/highcharts.js"></script>
+    <!-- Custom Theme JavaScript -->
+    <script src="/static/js/sb-admin-2.js"></script>
+
+    <script>
+        var word_list = [
+            {text: "A", weight: 1}
+            {% for word, weight in wordCloud.items %}
+                ,{text: "{{word}}", weight: "{{weight}}"}
+            {% endfor %}
+            ]
+        $(document).ready(function() {
+           $("#wordcloud").jQCloud(word_list);
+        });
+    </script>
+
+</body>
+
+</html>

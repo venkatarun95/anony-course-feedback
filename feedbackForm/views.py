@@ -1,0 +1,389 @@
+import json
+import copy
+
+from django.shortcuts import render, redirect
+from django.http import HttpResponse
+
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+
+from feedbackForm.models import Users, Courses, Professors, Feedbacks
+import databaseManager
+import dataAnalytics
+
+def index(request):
+	return redirect('login')
+
+def loginPage(request):
+	if request.method == 'POST':
+		username = request.POST['username']
+		password = request.POST['password']
+		user = authenticate(username=username, password=password)
+		user = authenticate(username=username, password=password)
+		if user is not None:
+			if user.is_active:
+				login(request, user)
+				return redirect('/feedback/user_home')
+			else:
+				return render(request, 'login.html', {"error_message": 'Sorry your account has been disabled.'})
+		else:
+			return render(request, 'login.html', {"error_message": 'Atleast one of the given username and password is incorrect.'})
+	elif request.method == 'GET':
+		return render(request, 'login.html')
+
+def logout_page(request):
+	logout(request)
+	return redirect('/feedback')
+
+@login_required
+def user_home(request):
+	username = str(request.user)
+	if len(Users.objects.filter(username = username)) > 0:
+		return redirect('/feedback/student_home')
+	elif len(Professors.objects.filter(name = username)):
+		return redirect('/feedback/professor_home')
+	else:
+		return redirect('/feedback/admin_home')
+
+@login_required
+def student_home(request):
+	#assert(False)
+	username = str(request.user)
+	try: Users.objects.filter(username = username)[0]
+	except: return render(request, 'login.html', {"error_message": "You need to be a student to access this page."})
+	courses, courseID = [], 1
+	for x in Users.objects.filter(username = username)[0].courses.all():
+		profs = []
+		for y in x.professors.all():
+			profs += [y.name]
+		#Calculate percentage completed
+		feedbackStr = json.loads(databaseManager.getUsersFormStr(username, User.objects.filter(username = username)[0].password, courseID))
+		noCompleted, totalFields = 0,0
+		for y in feedbackStr:
+			if y == 'course': continue
+			if feedbackStr[y] != "": noCompleted += 1
+			totalFields += 1
+		#print "***", feedbackStr
+		if totalFields == 0 or len(json.dumps(feedbackStr)) < 5: percentCompleted = 0
+		else: percentCompleted = (noCompleted*100)/totalFields
+		courses += [{"courseName": x.courseName, "profs": profs, "details": "xyz", "percentCompleted": percentCompleted}]
+		courseID += 1
+	return render(request, 'student_home.html', {"courses": courses})
+
+@login_required
+def student_feedback_form(request):
+	#XYZNOTE SECURITY WARNING - One could fill the form for one course and give POST request for another user
+	username = str(request.user)
+	try: user = Users.objects.filter(username = username)[0]
+	except: return render(request, 'login.html', {"error_message": "You need to be a student to fill feedback."})
+	passwordHash = User.objects.filter(username = username)[0].password
+
+	if request.method == "GET":
+		courseName = request.GET.get('course', '')
+		if courseName == '':
+			return render(request, 'unsuccessfulHack.html', {"error_msg": "Please specify a course"})
+		course = Users.objects.filter(username = username)[0].courses.filter(courseName = courseName)
+		if len(course) == 0:
+			return render(request, 'unsuccessfulHack.html', {"error_msg": "Sorry, you are not registered for this course."})
+		assert(len(course) == 1)
+		course = course[0]
+		formFormat = json.loads(course.formFormat)
+
+		#Populate it with data from previous feedback
+		courseID = user.courses.filter(courseName = courseName)[0].id
+		prevForm = json.loads(databaseManager.getUsersFormStr(username, passwordHash, courseID))
+		#print prevForm
+		for x in range(len(formFormat)):
+			if "name" in formFormat[x] and formFormat[x]["name"] in prevForm:
+				formFormat[x]["prevValue"] = prevForm[formFormat[x]["name"]]
+			else:
+				formFormat[x]["prevValue"] = ""
+
+		#Get discussion data
+		privateMessagesStr = databaseManager.readPrivateStudMessageStr(username, passwordHash, courseID)
+		privateMessages = []
+		for x in json.loads(privateMessagesStr):
+			privateMessages += [json.loads(x)]
+		courses, courseID = [], 1
+		for x in Users.objects.filter(username = username)[0].courses.all():
+			profs = []
+			for y in x.professors.all():
+				profs += [y.name]
+			courses += [{"courseName": x.courseName, "profs": profs}]
+			courseID += 1
+
+		return render(request, 'student_feedback_form.html', {"formFormat": formFormat, "course": courseName, "messages": privateMessages, "courses":courses})
+
+	elif request.method == "POST":
+		course = request.POST.dict()["course"]
+		courseID = user.courses.filter(courseName = course)[0].id
+		record = copy.deepcopy(request.POST.dict())
+		record.pop('csrfmiddlewaretoken')
+		record.pop('privateMessage')
+		databaseManager.setUsersFormStr(username, passwordHash, courseID, json.dumps(record))
+		
+		newMsg = request.POST.dict()["privateMessage"]
+		#print "Message: ", newMsg
+		if newMsg != "":
+			newMsg = "{\"from\":\"student\", \"msg\": \""+newMsg+"\"}"
+			databaseManager.addPrivateMessageStr(username, passwordHash, courseID, newMsg)
+		return redirect("/feedback/student_home") #HttpResponse("Your response has been recorded")
+
+def __getDepartmentString(courseName):
+	deptMap = {"MA":"Mathematics", "PH":"Physics", "CS":"Computer Science and Engineering", "EE":"Electronics and Electrical Engineering"}
+	return deptMap[courseName[:2]]
+
+def __getDepartmentWiseCourses(username, courseName):
+	'''depts, courses = [], []
+	for c in Courses.objects.all():
+		deptName = c.courseName[:2]
+		if deptName not in depts:
+			depts += [deptName]
+		courses += [{"courseName": c.courseName, "dept": __getDepartmentString(deptName)}]
+	for d in range(len(depts)):
+		depts[d] = __getDepartmentString(depts[d])'''
+
+	if len(Professors.objects.filter(name = username)) > 0 and courseName != '':
+		depts, courses = [__getDepartmentString(courseName)], []
+		correctProfFlag = False #whether or not the prof. can view analysis of this course
+		for c in Courses.objects.all():
+			if len(c.professors.filter(name=username)) > 0:
+				courses += [{"courseName": c.courseName, "dept": __getDepartmentString(c.courseName)}]
+				if courseName == c.courseName:
+					correctProfFlag = True
+		if not correctProfFlag:
+			return (None, "You can only view data of the courses you teach.")
+	elif len(Users.objects.filter(username = username)) == 0 or courseName == '':
+		depts, courses = [], []
+		for c in Courses.objects.all():
+			deptName = c.courseName[:2]
+			if deptName not in depts:
+				depts += [deptName]
+			courses += [{"courseName": c.courseName, "dept": __getDepartmentString(deptName)}]
+		for d in range(len(depts)):
+			depts[d] = __getDepartmentString(depts[d])
+	else:
+		return (None, "Only professors and administrators are allowed to view this page.")
+
+	return (courses, depts)
+
+@login_required
+def professor_home(request):
+	username = request.user.username
+	if len(Professors.objects.filter(name = username)) == 0:
+		return render(request, 'login.html', {"error_message": "Only a professor can access the professor's home page!"})
+	courses = []
+	if len(Professors.objects.filter(name = username)) != 0:
+		courses = []
+		for x in Courses.objects.all():
+			if len(x.professors.filter(name = username)) != 0:
+				profs = []
+				for y in x.professors.all():
+					profs += [y.name]
+				courses += [{"courseName": x.courseName, "profs": profs, "details": "xyz"}]
+	#assert(False)
+	if courses == []:
+		return render(request, 'login.html', {"error_message": 'Only professors can access the professor homepage!'})
+	return render(request, 'professor_course_dashboard.html', {"courses": courses})
+
+@login_required
+def admin_home(request):
+	username = str(request.user)
+	if len(Users.objects.filter(username = username)) > 0 or len(Professors.objects.filter(name = username)) > 0:
+		return render(request, 'login.html', {"error_message": "Only the administrator is allowed to access this page."})
+	#courseName = request.GET.get('course', '')
+
+	courses, depts = __getDepartmentWiseCourses(username, '')
+	if courses == None:
+		return render(request, 'login.html', {"error_message": depts}) #ie. error message
+	return render(request, 'admin_home.html', {"departments":depts, "courses":courses})
+	
+@login_required
+def analytics_page(request):
+	#verify later
+	courseName=request.GET.get('course', '')
+	if courseName == '':
+		return render(request, 'unsuccessfulHack.html', {"error_msg": "Please specify a course"})
+	a=dataAnalytics.getGraphsData(courseName)
+	b=dataAnalytics.getOverall(courseName)
+	#print a, "b", b
+	questionWise=[]
+	j=0
+	for i in a:
+		questionWise+=[{}]
+		for k in a[i]:
+			(questionWise[j])[k] = (a[i])[k]
+		(questionWise[j])['name'] = i
+		j+=1
+
+	'''if len(Professors.objects.filter(name = request.user.username)) > 0:
+		depts, courses = [__getDepartmentString(courseName)], []
+		correctProfFlag = False #whether or not the prof. can view analysis of this course
+		for c in Courses.objects.all():
+			if len(c.professors.filter(name=request.user.username)) > 0:
+				courses += [{"courseName": c.courseName, "dept": __getDepartmentString(c.courseName)}]
+				if courseName == c.courseName:
+					correctProfFlag = True
+		if not correctProfFlag:
+			return HttpResponse("You can only view analytics of the courses you teach.")
+
+	elif len(Users.objects.filter(username = request.user.username)) == 0:
+		courses, depts = __getDepartmentWiseCourses()
+	else:
+		return HttpResponse("Only professors and administrators are allowed to view this page.")'''
+	#assert(False)
+	#print depts, courses
+	courses, depts = __getDepartmentWiseCourses(request.user.username, courseName)
+	if courses == None:
+		return render(request, 'login.html', {"error_message": depts}) #ie. error message
+	#assert(False)
+	return render(request, 'analytics_page.html', {"overall": b,"questionWise" : questionWise,"courseName":courseName, "departments":depts, "courses":courses })
+
+def professors_private_messages(request):
+	if len(Professors.objects.filter(name=request.user.username)) == 0:
+		return render(request, 'login.html', {"error_message": "Only professors are allowed to access this page."})
+	if request.method == "GET":
+		courseName=request.GET.get('course', '')
+		if courseName == '':
+			return render(request, 'unsuccessfulHack.html', {"error_msg": "Please specify a course"})
+		if len(Courses.objects.filter(courseName = courseName)[0].professors.filter(name=request.user.username)) == 0:
+			return render(request, 'login.html', {"error_message": "You may only view the private messages of the courses you take!"})
+
+		messageList, feedbackID = [], 1
+		for f in Feedbacks.objects.filter(course = Courses.objects.filter(courseName=courseName)[0]):
+			x = json.loads(databaseManager.readPrivateProfMessageStr(request.user.username, f.id, request.user.password))
+			xi = [f.id]
+			for y in x:
+				xi += [json.loads(y)]
+			messageList += [xi]
+			feedbackID += 1
+		
+		#Create courses object to render on the sidebar
+		'''courses = []
+		for x in Courses.objects.all():
+			if len(x.professors.filter(name = request.user.username)) != 0:
+				profs = []
+				for y in x.professors.all():
+					profs += [y.name]
+				courses += [{"courseName": x.courseName, "profs": profs, "details": "xyz"}]'''
+		courses, depts = __getDepartmentWiseCourses(request.user.username, courseName)
+		if courses == None:
+			return HttpResponse(depts) #ie. error message
+
+		return render(request, 'professors_private_messages.html', {"messageList": messageList, "courseName": courseName, "courses":courses, "departments": depts})
+	elif request.method == "POST":
+		courseName = request.POST.dict()["courseName"]
+		profResponses = request.POST.dict()
+		profResponses.pop("courseName")
+		feedbackID = 1
+		#relevantFeedbacks = Feedbacks.objects.filter(course = Courses.objects.filter(courseName=courseName)[0])
+		for x in profResponses:
+			if x[:21] == "privateMessageStudent":
+				newMsg = "{\"from\":\"professor\", \"msg\": \""+profResponses[x]+"\"}"
+				f = Feedbacks.objects.filter(id=int(x[21:]))[0]
+				feedbackID += 1
+				if profResponses[x] != '':
+					databaseManager.addPrivateProfMessageStr(request.user.username, request.user.password, f.id, newMsg)
+
+		'''for f in Feedbacks.objects.filter(course = Courses.objects.filter(courseName=courseName)[0]):
+			resp = None
+			for x in profResponses:
+				if x[:21] == "privateMessageStudent":
+					if feedbackID == int(x[21:]):
+						resp = x
+						break
+			assert(resp != None)
+			if resp[:21] == "privateMessageStudent":
+				courseID = Feedbacks.objects.get(id=feedbackID).course.id
+				newMsg = "{\"from\":\"professor\", \"msg\": \""+profResponses[resp]+"\"}"
+				databaseManager.addPrivateProfMessageStr(request.user.username, request.user.password, f.id, newMsg)'''
+		return redirect('/feedback/professors_private_messages?course='+courseName)
+
+@login_required
+def form_creator(request):
+	if request.method == "GET":
+		courseName = request.GET.get("course", '')
+		if courseName == '':
+			return render(request, 'unsuccessfulHack.html', {"error_msg": "Please specify a course"})
+		#course = Users.objects.filter(username = username)[0].courses.filter(courseName = courseName)
+		#if len(course) == 0:
+		#	return HttpResponse("Sorry, you are not registered for this course.")
+		#assert(len(course) == 1)
+
+		courseForm = json.loads(Courses.objects.filter(courseName = courseName)[0].formFormat)
+		courses, depts = __getDepartmentWiseCourses(request.user.username, courseName)
+		if courses == None:
+			return render(request, 'login.html', {"error_message": depts}) #ie. error message
+		return render(request, 'form_creator.html', {"courseForm": courseForm, "course": courseName, "courses":courses, "departments":depts, "courseName": courseName})
+	elif request.method == "POST":
+		courseName = request.POST.dict()["course"]
+		formFields = request.POST.dict()
+		res = []
+		for i in range(100):
+			if "question" + str(i) in formFields:
+				x = "question" + str(i)
+				y = formFields["radioQuestion"+x[8:]]
+				f = {"description": formFields[x], "name": "field"+str(len(res)), "type": y}
+				res += [f]
+		Courses.objects.filter(courseName = courseName).update(formFormat = json.dumps(res))
+		return redirect('user_home')#HttpResponse("Your form has been recorded.")
+
+@login_required
+def prof_commentspage(request):
+	if len(Users.objects.filter(username=request.user.username)) > 0:
+		return render(request, 'login.html', {"error_message": "Only professors and administrators are allowed to access this page."})
+	courseName=request.GET.get('course', '')
+	if courseName == '':
+		return render(request, 'unsuccessfulHack.html', {"error_msg": "Please specify a course"})
+	a=dataAnalytics.getComments_Question(courseName)
+	b=dataAnalytics.getComments(courseName)
+	username = str(request.user)
+	'''courses = []
+	for x in Courses.objects.all():
+		if len(x.professors.filter(name = username)) != 0:
+			profs = []
+			for y in x.professors.all():
+				profs += [y.name]
+			courses += [{"courseName": x.courseName, "profs": profs, "details": "xyz"}]'''
+
+	courses, depts = __getDepartmentWiseCourses(request.user.username, courseName)
+	if courses == None:
+		return render(request, 'login.html', {"error_message": depts}) #ie. error message
+	wordCloud = dataAnalytics.getWordCloud(courseName)
+	#assert(False)
+	return render(request, 'prof_comments.html',{"comments":b,"comments_ques":a,"courses":courses, "departments": depts, "wordCloud": wordCloud, "courseName":courseName})
+
+@login_required
+def csv_download(request):
+	if len(Users.objects.filter(username=request.user.username)) > 0:
+		return render(request, 'login.html', {"error_message": "Only professors and administrators are allowed to access this page."})
+	courseName=request.GET.get('course', '')
+	CSV = dataAnalytics.get_csv(courseName)
+	courses, depts = __getDepartmentWiseCourses(request.user.username, courseName)
+	if courses == None:
+		return render(request, 'login.html', {"error_message": depts}) #ie. error message
+	return render(request, 'csv_download.html',{"CSV":CSV, "courseName":courseName, "courses":courses, "departments": depts})
+
+@login_required
+def user_manual(request):
+	if len(Users.objects.filter(username=request.user.username)) > 0:
+		return render(request, 'login.html', {"error_message": "Only professors and administrators are allowed to access this page."})
+	courses, depts = __getDepartmentWiseCourses(request.user.username, '')
+	if courses == None:
+		return render(request, 'login.html', {"error_message": depts}) #ie. error message
+	return render(request, 'user_manual.html', {"courses": courses, "departments": depts})
+
+@login_required
+def feedback_guidelines(request):
+	if len(Users.objects.filter(username=request.user.username)) == 0:
+		return render(request, 'login.html', {"error_message": "Only students are supposed to access this page."})
+	username = str(request.user)
+	courses, courseID = [], 1
+	for x in Users.objects.filter(username = username)[0].courses.all():
+		profs = []
+		for y in x.professors.all():
+			profs += [y.name]
+		#Calculate percentage completed
+		courses += [{"courseName": x.courseName, "profs": profs}]
+	return render(request, 'feedback_guidelines.html', {"courses": courses})
